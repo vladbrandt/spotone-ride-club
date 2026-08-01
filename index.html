@@ -125,17 +125,19 @@
 var tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
-// tg.initDataUnsafe.user появляется, только если апп реально запущен из Telegram —
-// сам объект Telegram.WebApp скрипт создаёт даже в обычном браузере, поэтому ориентируемся
-// именно на наличие данных пользователя, а не на факт существования tg.
-var isRealTelegramLaunch = !!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user);
+// tg.platform равен "unknown", только если скрипт запущен вне настоящего Telegram
+// (например, просто открыт в браузере). Ориентируемся именно на это, а не на то,
+// пришли ли данные пользователя — если внутри Telegram они вдруг не пришли,
+// по умолчанию блокируем, а не пропускаем.
+var isRealTelegramLaunch = !!(tg && tg.platform && tg.platform !== 'unknown');
 
 // Если открыть файл просто в браузере (не через Telegram), подставится тестовый пользователь
-var currentUser = isRealTelegramLaunch ? tg.initDataUnsafe.user : {
+var currentUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {
   id: 'test_user', first_name: 'Гость', username: ''
 };
 
-// Проверку делаем только внутри настоящего Telegram — вне его (локальный просмотр) не блокируем.
+// Внутри настоящего Telegram блокируем, если фото не видно — в том числе если данные
+// о пользователе почему-то вообще не пришли (раньше это ошибочно пропускало человека).
 var hasPhoto = isRealTelegramLaunch ? !!(currentUser && currentUser.photo_url) : true;
 
 // Значение из ссылки вида .../rideclub?startapp=... — открывает конкретный заезд напрямую
