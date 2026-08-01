@@ -315,9 +315,15 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-function showGate() {
+function showGate(debugText) {
   document.getElementById('home-screen').classList.add('hidden');
   document.getElementById('gate-screen').classList.remove('hidden');
+  if (debugText) {
+    var el = document.createElement('p');
+    el.style.cssText = 'font-size:11px; color:#999; text-align:center; margin-top:16px; font-family:monospace;';
+    el.textContent = 'debug: ' + debugText;
+    document.getElementById('gate-screen').appendChild(el);
+  }
 }
 
 if (!isRealTelegramLaunch) {
@@ -327,9 +333,9 @@ if (!isRealTelegramLaunch) {
   fetch('/api/check-photo?user_id=' + encodeURIComponent(currentUser.id))
     .then(function (res) { return res.json(); })
     .then(function (data) {
-      if (data.hasPhoto) { loadData(); } else { showGate(); }
+      if (data.hasPhoto) { loadData(); } else { showGate(data.debug); }
     })
-    .catch(function () {
+    .catch(function (err) {
       // Сбой самой проверки — не блокируем всех подряд из-за технической ошибки.
       loadData();
     });
