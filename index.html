@@ -98,7 +98,7 @@
   <button class="back-btn" onclick="showHome()">&larr; Назад</button>
   <p class="detail-title" id="d-title"></p>
   <div class="detail-meta">📅 <span id="d-date"></span></div>
-  <div class="detail-meta">📍 Место встречи: <span id="d-place"></span></div>
+  <div class="detail-meta">📍 <span id="d-place"></span></div>
   <div class="detail-meta hidden" id="d-difficulty-row">💪 Сложность: <span id="d-difficulty"></span></div>
   <p class="detail-desc" id="d-desc"></p>
   <button class="rsvp-btn" id="rsvp-btn" onclick="toggleRsvp()">Я еду с вами!</button>
@@ -168,7 +168,7 @@ function renderEventList() {
         '<div class="event-info">' +
           '<p class="event-title">' + escapeHtml(ev.title) + '</p>' +
           '<p class="event-meta">📅 ' + escapeHtml(ev.date) + ', ' + escapeHtml(ev.time) + '</p>' +
-          '<p class="event-meta">📍 Место встречи: ' + escapeHtml(ev.place) + '</p>' +
+          '<p class="event-meta">📍 ' + escapeHtml(ev.place) + '</p>' +
           difficultyLine +
         '</div>' +
       '</div>' +
