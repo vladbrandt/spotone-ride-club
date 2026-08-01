@@ -27,20 +27,24 @@
   .hidden { display: none !important; }
   .week-label { font-size: 24px; font-weight: 700; color: var(--text); margin: 4px 0 16px; text-align: center; }
   .event-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 4px; border-bottom: 1px solid var(--border);
-    cursor: pointer;
+    padding: 18px 6px; border-bottom: 1px solid var(--border);
   }
   .event-row:last-child { border-bottom: none; }
+  .event-row-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
   .event-icon {
-    width: 40px; height: 40px; border-radius: 50%;
+    width: 46px; height: 46px; border-radius: 50%;
     background: var(--accent-tint);
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: 18px;
+    flex-shrink: 0; font-size: 20px;
   }
   .event-info { flex: 1; }
-  .event-title { font-size: 15px; font-weight: 600; margin: 0; }
-  .event-meta { font-size: 13px; color: var(--text-secondary); margin: 2px 0 0; }
+  .event-title { font-size: 17px; font-weight: 600; margin: 0; }
+  .event-meta { font-size: 14px; color: var(--text-secondary); margin: 4px 0 0; }
+  .details-btn {
+    width: 100%; padding: 11px; border-radius: 10px;
+    border: 1px solid var(--border); background: none; color: var(--text);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+  }
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background: none; border: none; color: var(--text-secondary);
@@ -101,6 +105,7 @@
   <p class="detail-title" id="d-title"></p>
   <div class="detail-meta">📅 <span id="d-date"></span></div>
   <div class="detail-meta">📍 <span id="d-place"></span></div>
+  <div class="detail-meta hidden" id="d-difficulty-row">💪 Сложность: <span id="d-difficulty"></span></div>
   <p class="detail-desc" id="d-desc"></p>
   <button class="rsvp-btn" id="rsvp-btn" onclick="toggleRsvp()">Я буду</button>
   <button class="post-link hidden" id="post-link" onclick="openPostLink()">📎 Подробнее в канале</button>
@@ -168,13 +173,21 @@ function renderEventList() {
   state.events.forEach(function (ev) {
     var row = document.createElement('div');
     row.className = 'event-row';
-    row.onclick = function () { showDetail(ev.id); };
+    var difficultyLine = ev.difficulty
+      ? '<p class="event-meta">Сложность: ' + escapeHtml(ev.difficulty) + '</p>'
+      : '';
     row.innerHTML =
-      '<div class="event-icon">🚲</div>' +
-      '<div class="event-info">' +
-        '<p class="event-title">' + escapeHtml(ev.title) + '</p>' +
-        '<p class="event-meta">' + escapeHtml(ev.date) + ', ' + escapeHtml(ev.time) + ' · ' + escapeHtml(ev.place) + '</p>' +
-      '</div>';
+      '<div class="event-row-top">' +
+        '<div class="event-icon">🚲</div>' +
+        '<div class="event-info">' +
+          '<p class="event-title">' + escapeHtml(ev.title) + '</p>' +
+          '<p class="event-meta">📅 ' + escapeHtml(ev.date) + ', ' + escapeHtml(ev.time) + '</p>' +
+          '<p class="event-meta">📍 ' + escapeHtml(ev.place) + '</p>' +
+          difficultyLine +
+        '</div>' +
+      '</div>' +
+      '<button class="details-btn">Подробнее</button>';
+    row.querySelector('.details-btn').onclick = function () { showDetail(ev.id); };
     container.appendChild(row);
   });
 }
@@ -186,6 +199,13 @@ function showDetail(eventId) {
   document.getElementById('d-title').textContent = ev.title;
   document.getElementById('d-date').textContent = ev.date + ', ' + ev.time;
   document.getElementById('d-place').textContent = ev.place;
+  var diffRow = document.getElementById('d-difficulty-row');
+  if (ev.difficulty) {
+    document.getElementById('d-difficulty').textContent = ev.difficulty;
+    diffRow.classList.remove('hidden');
+  } else {
+    diffRow.classList.add('hidden');
+  }
   document.getElementById('d-desc').textContent = ev.desc;
   state.currentPostUrl = ev.postUrl || '';
   var postBtn = document.getElementById('post-link');
