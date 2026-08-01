@@ -134,6 +134,16 @@ var currentUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {
   id: 'test_user', first_name: 'Гость', username: ''
 };
 
+// Telegram отдаёт photo_url даже тем, у кого нет настоящего фото — в этом случае
+// это сгенерированный кружок с буквой в формате .svg. Настоящее загруженное фото
+// приходит в другом формате. Поэтому ориентируемся не на наличие ссылки, а на её формат.
+function looksLikeRealPhoto(url) {
+  if (!url) return false;
+  return !/\.svg(\?|$)/i.test(url);
+}
+
+var hasPhoto = isRealTelegramLaunch ? looksLikeRealPhoto(currentUser.photo_url) : true;
+
 // Значение из ссылки вида .../rideclub?startapp=... — открывает конкретный заезд напрямую
 var startParam = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
 var didAutoOpen = false;
@@ -326,19 +336,10 @@ function showGate(debugText) {
   }
 }
 
-if (!isRealTelegramLaunch) {
-  // Локальный просмотр вне Telegram (тест в браузере) — не блокируем.
+if (hasPhoto) {
   loadData();
 } else {
-  fetch('/api/check-photo?user_id=' + encodeURIComponent(currentUser.id))
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-      if (data.hasPhoto) { loadData(); } else { showGate(data.debug); }
-    })
-    .catch(function (err) {
-      // Сбой самой проверки — не блокируем всех подряд из-за технической ошибки.
-      loadData();
-    });
+  showGate('photo_url=' + (currentUser.photo_url || 'НЕТ'));
 }
 </script>
 </body>
