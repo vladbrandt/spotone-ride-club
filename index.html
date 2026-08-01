@@ -126,32 +126,13 @@ var tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
 // tg.platform равен "unknown", только если скрипт запущен вне настоящего Telegram
-// (например, просто открыт в браузере). Ориентируемся именно на это, а не на то,
-// пришли ли данные пользователя — если внутри Telegram они вдруг не пришли,
-// по умолчанию блокируем, а не пропускаем.
+// (например, просто открыт в браузере). Ориентируемся именно на это.
 var isRealTelegramLaunch = !!(tg && tg.platform && tg.platform !== 'unknown');
 
 // Если открыть файл просто в браузере (не через Telegram), подставится тестовый пользователь
 var currentUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {
   id: 'test_user', first_name: 'Гость', username: ''
 };
-
-// Внутри настоящего Telegram блокируем, если фото не видно — в том числе если данные
-// о пользователе почему-то вообще не пришли (раньше это ошибочно пропускало человека).
-var hasPhoto = isRealTelegramLaunch ? !!(currentUser && currentUser.photo_url) : true;
-
-// ВРЕМЕННО: диагностика, уберём после того как найдём причину.
-var debugEl = document.createElement('div');
-debugEl.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:10px;line-height:1.5;padding:8px;font-family:monospace;z-index:9999;word-break:break-all;';
-debugEl.textContent =
-  'platform=' + (tg ? tg.platform : 'no-tg') +
-  ' | isRealLaunch=' + isRealTelegramLaunch +
-  ' | hasUser=' + !!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user) +
-  ' | photo_url=' + (currentUser.photo_url || 'НЕТ') +
-  ' | hasPhoto=' + hasPhoto;
-document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(debugEl); });
-if (document.body) { document.body.appendChild(debugEl); }
-
 
 // Значение из ссылки вида .../rideclub?startapp=... — открывает конкретный заезд напрямую
 var startParam = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
@@ -334,11 +315,24 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-if (hasPhoto) {
-  loadData();
-} else {
+function showGate() {
   document.getElementById('home-screen').classList.add('hidden');
   document.getElementById('gate-screen').classList.remove('hidden');
+}
+
+if (!isRealTelegramLaunch) {
+  // Локальный просмотр вне Telegram (тест в браузере) — не блокируем.
+  loadData();
+} else {
+  fetch('/api/check-photo?user_id=' + encodeURIComponent(currentUser.id))
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.hasPhoto) { loadData(); } else { showGate(); }
+    })
+    .catch(function () {
+      // Сбой самой проверки — не блокируем всех подряд из-за технической ошибки.
+      loadData();
+    });
 }
 </script>
 </body>
