@@ -1,5 +1,8 @@
 {
   "name": "spotone-rsvp-api",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@vercel/functions": "^1.5.0"
+  }
 }
