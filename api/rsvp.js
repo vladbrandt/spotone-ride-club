@@ -1,3 +1,4 @@
+const { waitUntil } = require('@vercel/functions');
 const { setCors, getEvents, getRsvpsByEvent, setRsvpStatus, getEventTitle } = require('../lib/notion');
 const { notifyRsvp } = require('../lib/telegram');
 
@@ -17,8 +18,15 @@ module.exports = async function handler(req, res) {
 
     if (action === 'join' || action === 'cancel') {
       await setRsvpStatus(eventId, user, action === 'join' ? 'активно' : 'отменено');
-      const eventTitle = await getEventTitle(eventId);
-      await notifyRsvp(action, user, eventTitle);
+
+      // Уведомления не нужны человеку, который записывается — отправляем их в фоне,
+      // не задерживая ответ приложению. waitUntil держит функцию живой ровно
+      // до завершения этой задачи, даже после того как ответ уже ушёл.
+      waitUntil(
+        getEventTitle(eventId).then(function (title) {
+          return notifyRsvp(action, user, title);
+        })
+      );
     }
 
     const [events, rsvps] = await Promise.all([getEvents(), getRsvpsByEvent()]);
