@@ -273,7 +273,9 @@ function toggleRsvp() {
   var btn = document.getElementById('rsvp-btn');
   var isJoined = btn.classList.contains('joined');
   var action = isJoined ? 'cancel' : 'join';
+  var previousText = btn.textContent;
   btn.disabled = true;
+  btn.textContent = 'Секунду...';
 
   fetch('/api/rsvp', {
     method: 'POST',
@@ -296,7 +298,10 @@ function toggleRsvp() {
       renderParticipants(state.currentEventId);
       btn.disabled = false;
     })
-    .catch(function () { btn.disabled = false; });
+    .catch(function () {
+      btn.disabled = false;
+      btn.textContent = previousText;
+    });
 }
 
 function escapeHtml(str) {
