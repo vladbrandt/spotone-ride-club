@@ -17,16 +17,21 @@ module.exports = async function handler(req, res) {
     const user = body.user || {};
 
     if (action === 'join' || action === 'cancel') {
-      await setRsvpStatus(eventId, user, action === 'join' ? 'активно' : 'отменено');
+      const result = await setRsvpStatus(eventId, user, action === 'join' ? 'активно' : 'отменено');
 
-      // Уведомления не нужны человеку, который записывается — отправляем их в фоне,
-      // не задерживая ответ приложению. waitUntil держит функцию живой ровно
-      // до завершения этой задачи, даже после того как ответ уже ушёл.
-      waitUntil(
-        getEventTitle(eventId).then(function (title) {
-          return notifyRsvp(action, user, title);
-        })
-      );
+      // Шлём уведомление, только если статус реально изменился. Если он уже
+      // был таким (повторное нажатие, сетевой ретрай) — result.changed === false,
+      // и уведомление не дублируется.
+      if (result && result.changed) {
+        // Уведомления не нужны человеку, который записывается — отправляем их в фоне,
+        // не задерживая ответ приложению. waitUntil держит функцию живой ровно
+        // до завершения этой задачи, даже после того как ответ уже ушёл.
+        waitUntil(
+          getEventTitle(eventId).then(function (title) {
+            return notifyRsvp(action, user, title);
+          })
+        );
+      }
     }
 
     const [events, rsvps] = await Promise.all([getEvents(), getRsvpsByEvent()]);
