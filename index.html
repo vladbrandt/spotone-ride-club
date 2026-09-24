@@ -271,6 +271,7 @@ function updateButton(isJoined) {
 
 function toggleRsvp() {
   var btn = document.getElementById('rsvp-btn');
+  if (btn.disabled) return; // защита от повторного тапа, пока запрос ещё идёт
   var isJoined = btn.classList.contains('joined');
   var action = isJoined ? 'cancel' : 'join';
   var previousText = btn.textContent;
