@@ -265,6 +265,10 @@ function handleAvatarError(img) {
 
 function updateButton(isJoined) {
   var btn = document.getElementById('rsvp-btn');
+  // Кнопка общая для всех заездов — при показе ЛЮБОГО заезда она должна
+  // быть кликабельна, даже если пару секунд назад блокировалась запросом
+  // по другому заезду, с которого только что переключились.
+  btn.disabled = false;
   btn.textContent = isJoined ? 'Отменить запись' : 'Я еду с вами!';
   btn.classList.toggle('joined', isJoined);
 }
@@ -275,6 +279,10 @@ function toggleRsvp() {
   var isJoined = btn.classList.contains('joined');
   var action = isJoined ? 'cancel' : 'join';
   var previousText = btn.textContent;
+  // Запоминаем, к какому именно заезду относится этот запрос — если за время
+  // ожидания ответа человек переключится на другой заезд, нельзя будет
+  // затереть его свежие данные ответом от этого, более старого запроса.
+  var requestEventId = state.currentEventId;
   btn.disabled = true;
   btn.textContent = 'Секунду...';
 
@@ -283,7 +291,7 @@ function toggleRsvp() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: action,
-      event_id: state.currentEventId,
+      event_id: requestEventId,
       user: {
         id: currentUser.id,
         username: currentUser.username || '',
@@ -295,11 +303,17 @@ function toggleRsvp() {
   })
     .then(function (res) { return res.json(); })
     .then(function (data) {
-      state.rsvps = data.rsvps || {};
-      renderParticipants(state.currentEventId);
-      btn.disabled = false;
+      var freshRsvps = data.rsvps || {};
+      // Обновляем только тот заезд, к которому был этот запрос — остальные
+      // ключи в ответе могли устареть, если человек уже успел записаться
+      // на другой заезд, пока этот запрос ещё выполнялся.
+      state.rsvps[requestEventId] = freshRsvps[requestEventId] || [];
+      if (state.currentEventId === requestEventId) {
+        renderParticipants(state.currentEventId);
+      }
     })
     .catch(function () {
+      if (state.currentEventId !== requestEventId) return;
       btn.disabled = false;
       btn.textContent = previousText;
     });
